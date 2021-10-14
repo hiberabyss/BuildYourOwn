@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -13,10 +14,37 @@
 #include <sys/wait.h>
 #include <ranges>
 #include <iomanip>
+#include <unordered_map>
 
 using namespace std;
 
-char* readline() {
+int Launch(char **args);
+
+using BuiltinFun = function<int(const char**)>;
+
+int BuiltinCd(const char** argv) {
+  if (argv[1] == nullptr) {
+    fprintf(stderr, "wrong args for builtin cd command");
+    return 2;
+  }
+
+  if (chdir(argv[1]) != 0) {
+    perror("fail to change to dir");
+  }
+
+  return 1;
+}
+
+int BuiltinExit(const char** argv) {
+  return 0;
+}
+
+static const unordered_map<string, BuiltinFun> kBuiltinFunMap = {
+  {"cd", BuiltinCd},
+  {"exit", BuiltinExit},
+};
+
+char* Readline() {
   char* line = nullptr;
   size_t bufsize = 0;
 
@@ -29,16 +57,72 @@ char* readline() {
   return line;
 }
 
+char** AllocateArgv(char** argv, int* cur_size) {
+  static const int kDefaultSize = 64;
+  char** res = nullptr;
+  *cur_size += kDefaultSize;
+
+  if (argv == nullptr) {
+    res = (char**)malloc(kDefaultSize * sizeof(char*));
+  } else {
+    res = (char**)realloc(argv, *cur_size * sizeof(char*));
+  }
+
+  if (res == nullptr) {
+    perror("Fail to allocate memory");
+    exit(EXIT_FAILURE);
+  }
+
+  return res;
+}
+
+char** SplitLine(char* line) {
+  int bufsize = 0;
+  char** argv = AllocateArgv(nullptr, &bufsize);
+
+  static const char* kArgDelim = " \t\r\n";
+  int idx = 0;
+  char* arg = strtok(line, kArgDelim);
+  while (arg != nullptr) {
+    argv[idx] = arg;
+    idx++;
+
+    if (idx >= bufsize) {
+      argv = AllocateArgv(argv, &bufsize);
+    }
+
+    arg = strtok(nullptr, kArgDelim);
+  }
+  argv[idx] = nullptr;
+
+  return argv;
+}
+
+int Execute(char** argv) {
+  if (argv == nullptr || argv[0] == nullptr) {
+    return 1;
+  }
+
+  if (kBuiltinFunMap.contains(argv[0])) {
+    auto fun = kBuiltinFunMap.at(argv[0]);
+    return fun((const char**)argv);
+  }
+
+  return Launch(argv);
+}
+
 void Loop() {
   int status = 1;
   do {
     std::cout << "> ";
-    char* line = readline();
-    printf("%s", line);
-    // getline(cin, line);
+    char* line = Readline();
+    char** argv = SplitLine(line);
+
+    status = Execute(argv);
 
     free(line);
-  } while (status);
+    free(argv);
+  } while (status > 0);
 }
 
 int Launch(char **args) {
@@ -69,7 +153,6 @@ int main(int argc, char *argv[]) {
   char* cmdline[] = {"echo", "hbliu"};
 
   Loop();
-  // Launch(cmdline);
-  // std::cout << "Hello" << std::endl;
+
   return 0;
 }
