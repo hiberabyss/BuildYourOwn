@@ -150,7 +150,7 @@ int Launch(char **args) {
 }
 
 int main(int argc, char *argv[]) {
-  char* cmdline[] = {"echo", "hbliu"};
+  // char* cmdline[] = {"echo", "hbliu"};
 
   Loop();
 
