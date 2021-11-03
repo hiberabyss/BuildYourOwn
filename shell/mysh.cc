@@ -12,7 +12,6 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <ranges>
 #include <iomanip>
 #include <unordered_map>
 
