@@ -4,3 +4,10 @@ cc_binary(
     'leak_test.cc',
   ],
 )
+
+cc_binary(
+  name = 'virtual_mem',
+  srcs = [
+    'virtual_mem.cc',
+  ],
+)
