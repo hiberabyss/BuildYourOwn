@@ -9,19 +9,27 @@
 #include <netinet/ip.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "network/addr.h"
 
 void ReadMsg(int fd) {
-  const size_t kMaxChar = 16;
+  const size_t kMaxChar = 4;
   char buf[kMaxChar + 1];
   memset(buf, 0, kMaxChar);
   int len = 0;
   std::cout << "Received Msg:" << std::endl;
+
+  struct stat s;
+  if (fstat(fd, &s) < 0) {
+    std::cerr << "Fail to stat fd: " << fd << std::endl;
+  }
+  std::cout << "File size: " << s.st_size << std::endl;
+
   while ((len = read(fd, buf, kMaxChar)) > 0) {
-    // sleep(30);
     buf[len] = 0;
     std::cout << buf;
+
   }
   std::cout << "Msg end!" << std::endl;
 }
@@ -30,6 +38,12 @@ void EventLoop() {
   int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (sock_fd < 0) {
     std::cout << "Fail to create socket fd" << std::endl;
+    return;
+  }
+
+  int optval = 1;
+  if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) != 0) {
+    std::cerr << "Fail to set REUSEADDR option: " << strerror(errno) << std::endl;
     return;
   }
 
