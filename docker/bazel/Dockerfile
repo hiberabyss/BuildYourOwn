@@ -4,3 +4,8 @@ FROM gcc
 COPY data/bazel-4.2.2-linux-x86_64 /usr/local/bin/bazel
 
 RUN chmod +x /usr/local/bin/bazel
+
+RUN apt update
+
+RUN apt install iproute2 -y
+RUN apt install linux-headers-generic -y

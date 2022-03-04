@@ -20,12 +20,6 @@ void ReadMsg(int fd) {
   int len = 0;
   std::cout << "Received Msg:" << std::endl;
 
-  struct stat s;
-  if (fstat(fd, &s) < 0) {
-    std::cerr << "Fail to stat fd: " << fd << std::endl;
-  }
-  std::cout << "File size: " << s.st_size << std::endl;
-
   while ((len = read(fd, buf, kMaxChar)) > 0) {
     buf[len] = 0;
     std::cout << buf;
